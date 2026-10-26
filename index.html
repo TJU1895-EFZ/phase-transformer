@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物态变化大挑战</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .container {
+    background: white;
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  h1 { font-size: 2em; color: #4a3f8a; margin-bottom: 10px; }
+  .subtitle { color: #888; margin-bottom: 30px; font-size: 0.95em; }
+  .score-bar {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    font-size: 1.1em;
+  }
+  .score-bar span { padding: 6px 16px; border-radius: 12px; }
+  .score-correct { background: #d4edda; color: #155724; }
+  .score-wrong { background: #f8d7da; color: #721c24; }
+  .score-total { background: #e2e3f1; color: #383d61; }
+
+  /* --- Start Screen --- */
+  #start-screen .emoji-row { font-size: 3em; margin: 20px 0; }
+  #start-screen .materials {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .material-card {
+    background: #f0eeff;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 1em;
+  }
+  .material-card .icon { font-size: 2em; }
+  .material-card .name { font-weight: bold; color: #4a3f8a; margin-top: 4px; }
+  .btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 14px 48px;
+    font-size: 1.2em;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 20px;
+  }
+  .btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+  .btn:active { transform: scale(0.98); }
+
+  /* --- Quiz Screen --- */
+  #quiz-screen { display: none; }
+  .question-badge {
+    display: inline-block;
+    background: #fff3cd;
+    color: #856404;
+    padding: 4px 14px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    margin-bottom: 12px;
+  }
+  .question-text {
+    font-size: 1.3em;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+  .substance {
+    font-size: 3em;
+    margin: 16px 0;
+  }
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .option-btn {
+    background: #f5f4ff;
+    border: 2px solid #ddd;
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 1.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #333;
+  }
+  .option-btn:hover { border-color: #667eea; background: #eee9ff; }
+  .option-btn.correct {
+    background: #d4edda !important;
+    border-color: #28a745 !important;
+    color: #155724;
+  }
+  .option-btn.wrong {
+    background: #f8d7da !important;
+    border-color: #dc3545 !important;
+    color: #721c24;
+  }
+  .option-btn:disabled { cursor: default; }
+  .feedback {
+    margin-top: 20px;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1em;
+    display: none;
+    line-height: 1.6;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct-fb { background: #d4edda; color: #155724; }
+  .feedback.wrong-fb { background: #f8d7da; color: #721c24; }
+  .next-btn {
+    display: none;
+    margin-top: 16px;
+  }
+  .next-btn.show { display: inline-block; }
+
+  /* --- End Screen --- */
+  #end-screen { display: none; }
+  .end-emoji { font-size: 4em; margin: 20px 0; }
+  .final-score { font-size: 2.5em; color: #4a3f8a; font-weight: bold; }
+  .end-msg { color: #666; margin: 12px 0 24px; font-size: 1.1em; }
+
+  @media (max-width: 480px) {
+    .container { padding: 24px 18px; }
+    h1 { font-size: 1.5em; }
+    .options { grid-template-columns: 1fr; }
+    .materials { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Start Screen -->
+  <div id="start-screen">
+    <h1>🔬 物态变化大挑战</h1>
+    <p class="subtitle">七年级科学 · 互动问答</p>
+    <div class="emoji-row">💧 🧊 💨</div>
+    <p>认识这些物质，回答物态变化的问题！</p>
+    <div class="materials">
+      <div class="material-card"><div class="icon">💧</div><div class="name">水</div></div>
+      <div class="material-card"><div class="icon">🟣</div><div class="name">碘粒</div></div>
+      <div class="material-card"><div class="icon">⚪</div><div class="name">海波</div></div>
+      <div class="material-card"><div class="icon">🕯️</div><div class="name">石蜡</div></div>
+    </div>
+    <p style="color:#888;font-size:0.9em;margin-top:12px;">共 12 道题，准备好了吗？</p>
+    <button class="btn" onclick="startQuiz()">开始挑战！</button>
+  </div>
+
+  <!-- Quiz Screen -->
+  <div id="quiz-screen">
+    <div class="score-bar">
+      <span class="score-correct">✅ <span id="correct-count">0</span></span>
+      <span class="score-wrong">❌ <span id="wrong-count">0</span></span>
+      <span class="score-total">📝 <span id="question-num">1</span>/12</span>
+    </div>
+    <div class="question-badge" id="q-badge">🔧 工具选择</div>
+    <div class="substance" id="q-emoji">🟣</div>
+    <div class="question-text" id="q-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="btn next-btn" id="next-btn" onclick="nextQuestion()">下一题 →</button>
+  </div>
+
+  <!-- End Screen -->
+  <div id="end-screen">
+    <div class="end-emoji" id="end-emoji">🏆</div>
+    <h1>挑战完成！</h1>
+    <div class="final-score"><span id="final-correct">0</span> / 12</div>
+    <p class="end-msg" id="end-msg"></p>
+    <button class="btn" onclick="restartQuiz()">再来一次 🔄</button>
+  </div>
+
+</div>
+
+<script>
+// ===== Question Bank =====
+const allQuestions = [
+  // --- 碘：升华/凝华 ---
+  {
+    substance: "碘粒", emoji: "🟣",
+    badge: "🔧 工具选择",
+    question: "想让碘粒发生物态变化（变成紫色碘蒸气），应该用什么工具加热？",
+    options: ["酒精灯", "放大镜", "微波炉", "吹风机"],
+    answer: 0,
+    explanation: "碘粒升华需要加热，实验室中用 <b>酒精灯</b> 提供热源。"
+  },
+  {
+    substance: "碘粒", emoji: "🟣",
+    badge: "🧪 反应名称",
+    question: "固态的碘直接变成紫色的碘蒸气，这个物态变化叫什么？",
+    options: ["熔化", "升华", "汽化", "凝华"],
+    answer: 1,
+    explanation: "固态直接变成气态叫 <b>升华</b>。碘的升华是典型的升华现象。"
+  },
+  {
+    substance: "碘蒸气", emoji: "💜",
+    badge: "🧪 反应名称",
+    question: "紫色的碘蒸气遇冷直接变成固态碘，这个物态变化叫什么？",
+    options: ["凝华", "升华", "凝固", "液化"],
+    answer: 0,
+    explanation: "气态直接变成固态叫 <b>凝华</b>，是升华的逆过程。"
+  },
+
+  // --- 海波（硫代硫酸钠）：晶体熔化 ---
+  {
+    substance: "海波", emoji: "⚪",
+    badge: "🔧 工具选择",
+    question: "海波（硫代硫酸钠）是晶体，要研究它的熔化过程，应该用什么方法加热？",
+    options: ["用酒精灯直接加热", "水浴法加热", "放在阳光下暴晒", "用手捂热"],
+    answer: 1,
+    explanation: "研究晶体熔化要用 <b>水浴法</b>（把试管放在热水中），使海波受热均匀，温度变化平缓，便于观察。"
+  },
+  {
+    substance: "海波", emoji: "⚪",
+    badge: "🧪 反应名称",
+    question: "固态的海波加热到 48°C 时开始变成液态，这个变化叫什么？",
+    options: ["熔化", "升华", "汽化", "蒸发"],
+    answer: 0,
+    explanation: "固态变成液态叫 <b>熔化</b>。海波是晶体，有固定的熔点（48°C）。"
+  },
+  {
+    substance: "液态海波", emoji: "💎",
+    badge: "🧪 反应名称",
+    question: "液态的海波冷却到 48°C 时开始变成固态，这个变化叫什么？",
+    options: ["凝固", "熔化", "凝华", "液化"],
+    answer: 0,
+    explanation: "液态变成固态叫 <b>凝固</b>。晶体有固定的凝固点，海波的凝固点也是 48°C。"
+  },
+
+  // --- 石蜡：非晶体熔化 ---
+  {
+    substance: "石蜡", emoji: "🕯️",
+    badge: "🔧 工具选择",
+    question: "要研究石蜡的熔化规律，应该用什么方法加热？",
+    options: ["用酒精灯直接加热", "水浴法加热", "放在火上烤", "用打火机烧"],
+    answer: 1,
+    explanation: "同样用 <b>水浴法</b> 加热，使石蜡受热均匀。注意石蜡是非晶体，没有固定熔点。"
+  },
+  {
+    substance: "石蜡", emoji: "🕯️",
+    badge: "🧪 反应名称",
+    question: "固态石蜡受热逐渐变软、变稀，最后变成液体，这个变化叫什么？",
+    options: ["熔化", "融化", "汽化", "溶解"],
+    answer: 0,
+    explanation: "固态变成液态叫 <b>熔化</b>。石蜡是非晶体，熔化时温度持续上升，没有固定熔点。"
+  },
+  {
+    substance: "石蜡", emoji: "🕯️",
+    badge: "🧪 知识对比",
+    question: "海波和石蜡在熔化时的主要区别是什么？",
+    options: [
+      "海波有固定熔点，石蜡没有",
+      "石蜡有固定熔点，海波没有",
+      "两者都没有固定熔点",
+      "两者都有固定熔点"
+    ],
+    answer: 0,
+    explanation: "<b>海波是晶体</b>，有固定熔点（48°C）；<b>石蜡是非晶体</b>，没有固定熔点，熔化时温度持续升高。"
+  },
+
+  // --- 水：三态变化 ---
+  {
+    substance: "水", emoji: "💧",
+    badge: "🔧 工具选择",
+    question: "要让水沸腾变成水蒸气，实验室中应该用什么工具加热？",
+    options: ["酒精灯", "蜡烛", "打火机", "电风扇"],
+    answer: 0,
+    explanation: "实验室中用 <b>酒精灯</b> 加热水。水的沸点是 100°C（标准大气压下）。"
+  },
+  {
+    substance: "水", emoji: "💧",
+    badge: "🧪 反应名称",
+    question: "水加热到 100°C 变成水蒸气，这个变化叫什么？",
+    options: ["沸腾（汽化）", "蒸发", "熔化", "升华"],
+    answer: 0,
+    explanation: "液体内部和表面同时发生的剧烈汽化现象叫 <b>沸腾</b>，属于汽化的一种。"
+  },
+  {
+    substance: "水蒸气", emoji: "☁️",
+    badge: "🧪 反应名称",
+    question: "水蒸气遇冷变成小水珠（如烧水时壶嘴冒出的白气），这个变化叫什么？",
+    options: ["液化", "凝固", "凝华", "汽化"],
+    answer: 0,
+    explanation: "气态变成液态叫 <b>液化</b>。白气其实是小水珠，是水蒸气遇冷液化形成的。"
+  },
+];
+
+// ===== Game State =====
+let questions = [];
+let currentIndex = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  questions = shuffle(allQuestions).slice(0, 12);
+  currentIndex = 0;
+  correctCount = 0;
+  wrongCount = 0;
+  answered = false;
+  document.getElementById("start-screen").style.display = "none";
+  document.getElementById("end-screen").style.display = "none";
+  document.getElementById("quiz-screen").style.display = "block";
+  updateScore();
+  showQuestion();
+}
+
+function updateScore() {
+  document.getElementById("correct-count").textContent = correctCount;
+  document.getElementById("wrong-count").textContent = wrongCount;
+  document.getElementById("question-num").textContent = currentIndex + 1;
+}
+
+function showQuestion() {
+  answered = false;
+  const q = questions[currentIndex];
+  document.getElementById("q-badge").textContent = q.badge;
+  document.getElementById("q-emoji").textContent = q.emoji;
+  document.getElementById("q-text").innerHTML = q.question;
+
+  const optsDiv = document.getElementById("options");
+  optsDiv.innerHTML = "";
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i, btn);
+    optsDiv.appendChild(btn);
+  });
+
+  const fb = document.getElementById("feedback");
+  fb.className = "feedback";
+  fb.style.display = "none";
+  document.getElementById("next-btn").className = "btn next-btn";
+}
+
+function selectAnswer(idx, btn) {
+  if (answered) return;
+  answered = true;
+
+  const q = questions[currentIndex];
+  const btns = document.querySelectorAll(".option-btn");
+  btns.forEach(b => b.disabled = true);
+
+  const fb = document.getElementById("feedback");
+
+  if (idx === q.answer) {
+    btn.classList.add("correct");
+    fb.className = "feedback correct-fb show";
+    fb.innerHTML = "✅ 回答正确！" + q.explanation;
+    correctCount++;
+  } else {
+    btn.classList.add("wrong");
+    btns[q.answer].classList.add("correct");
+    fb.className = "feedback wrong-fb show";
+    fb.innerHTML = "❌ 答错了，正确答案是 " + q.options[q.answer] + "。" + q.explanation;
+    wrongCount++;
+  }
+
+  updateScore();
+  document.getElementById("next-btn").className = "btn next-btn show";
+  if (currentIndex >= questions.length - 1) {
+    document.getElementById("next-btn").textContent = "查看结果 🏆";
+  } else {
+    document.getElementById("next-btn").textContent = "下一题 →";
+  }
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex >= questions.length) {
+    showEnd();
+  } else {
+    showQuestion();
+    updateScore();
+  }
+}
+
+function showEnd() {
+  document.getElementById("quiz-screen").style.display = "none";
+  document.getElementById("end-screen").style.display = "block";
+  document.getElementById("final-correct").textContent = correctCount;
+
+  const pct = correctCount / questions.length;
+  let emoji, msg;
+  if (pct >= 0.9) { emoji = "🏆"; msg = "太厉害了！你是物态变化大师！"; }
+  else if (pct >= 0.7) { emoji = "🌟"; msg = "表现不错！继续加油！"; }
+  else if (pct >= 0.5) { emoji = "💪"; msg = "还需努力，再复习一下吧！"; }
+  else { emoji = "📚"; msg = "别灰心，回去看看课本再来挑战！"; }
+
+  document.getElementById("end-emoji").textContent = emoji;
+  document.getElementById("end-msg").textContent = msg;
+}
+
+function restartQuiz() {
+  document.getElementById("end-screen").style.display = "none";
+  startQuiz();
+}
+</script>
+</body>
+</html>
